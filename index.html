@@ -1,0 +1,1127 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>小学华文词语游戏</title>
+  <style>
+    :root {
+      --bg: #f6efe0;
+      --card: #fffaf1;
+      --primary: #8b5e34;
+      --primary-dark: #5a3a1f;
+      --accent: #7a2e2e;
+      --warn: #b87333;
+      --text: #2f261b;
+      --muted: #6e5b45;
+      --border: #d8c3a5;
+      /* 像素级素材切片路径（放在 assets/ 下） */
+      --bg-scene: url('assets/bg_scene.png');
+      --leaderboard-stone: url('assets/leaderboard_stone.png');
+      --scroll-panel: url('assets/scroll_panel.png');
+      --opt-a: url('assets/option_a_red.png');
+      --opt-b: url('assets/option_b_blue.png');
+      --opt-c: url('assets/option_c_green.png');
+      --opt-d: url('assets/option_d_gold.png');
+      --fx-hit: url('assets/fx_hit_po.png');
+      --fx-slash: url('assets/fx_slash_ji.png');
+    }
+
+    * { box-sizing: border-box; }
+
+    body {
+      margin: 0;
+      font-family: "PingFang SC", "Microsoft YaHei", Arial, sans-serif;
+      background: radial-gradient(circle at top, #efe2c7 0%, var(--bg) 52%, #ead9bb 100%);
+      color: var(--text);
+      min-height: 100vh;
+      display: flex;
+      justify-content: center;
+      padding: 16px;
+    }
+
+    .app {
+      width: min(980px, 100%);
+      background: var(--card);
+      border: 2px solid var(--border);
+      border-radius: 18px;
+      padding: 20px;
+      box-shadow: 0 10px 30px rgba(73, 42, 19, 0.2);
+      background-image: linear-gradient(transparent 95%, rgba(136, 105, 69, 0.08) 100%);
+      position: relative;
+      overflow: hidden;
+    }
+
+    .app::before {
+      content: "";
+      position: absolute;
+      inset: 0;
+      background:
+        var(--bg-scene) center top / cover no-repeat,
+        linear-gradient(to bottom, rgba(36,27,19,0.12), rgba(36,27,19,0.4)),
+        radial-gradient(circle at 80% 18%, rgba(255,170,72,0.25), transparent 36%),
+        radial-gradient(circle at 20% 22%, rgba(120,180,220,0.22), transparent 40%);
+      pointer-events: none;
+      z-index: 0;
+    }
+
+    .app > * {
+      position: relative;
+      z-index: 1;
+    }
+
+    h1 {
+      margin: 0 0 8px;
+      font-size: clamp(26px, 4vw, 36px);
+      text-align: center;
+      color: var(--primary-dark);
+      letter-spacing: 2px;
+    }
+
+    .subtitle {
+      text-align: center;
+      color: var(--muted);
+      margin: 0 0 18px;
+      font-size: clamp(15px, 2.2vw, 18px);
+    }
+
+    .topbar {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 10px;
+      margin-bottom: 16px;
+    }
+
+    .stat {
+      background: linear-gradient(180deg, #f8f3e5, #e6d5b8);
+      border: 2px solid var(--border);
+      border-radius: 12px;
+      padding: 10px;
+      text-align: center;
+      font-size: clamp(14px, 2vw, 18px);
+      font-weight: 700;
+    }
+
+    .card {
+      border: 3px solid #9c7246;
+      border-radius: 24px;
+      padding: 16px;
+      margin-bottom: 14px;
+      background: var(--scroll-panel) center / cover no-repeat, linear-gradient(180deg, #f7e7c9 0%, #f3dfba 100%);
+      box-shadow: inset 0 0 0 3px #e6c896;
+    }
+
+    .task-type {
+      color: var(--primary-dark);
+      font-weight: 700;
+      margin-bottom: 6px;
+      font-size: clamp(14px, 2vw, 18px);
+    }
+
+    .question {
+      font-size: clamp(22px, 4vw, 34px);
+      margin: 8px 0 0;
+      line-height: 1.4;
+      font-weight: 800;
+      cursor: pointer;
+      text-decoration: underline dotted #825f37 3px;
+      text-underline-offset: 6px;
+    }
+
+    .options {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 10px;
+      margin-top: 14px;
+    }
+
+    .option-btn, .control-btn {
+      border: none;
+      border-radius: 12px;
+      padding: 14px;
+      font-size: clamp(18px, 3.2vw, 24px);
+      font-weight: 700;
+      cursor: pointer;
+      transition: transform 0.05s ease, background 0.2s ease;
+      min-height: 64px;
+    }
+
+    .option-btn {
+      color: #fff9e9;
+      border: 3px solid rgba(255,230,170,0.5);
+      clip-path: polygon(12% 0, 88% 0, 100% 16%, 100% 84%, 88% 100%, 12% 100%, 0 84%, 0 16%);
+      text-shadow: 0 1px 3px rgba(0,0,0,0.45);
+    }
+    .option-btn:nth-child(4n+1) { background: var(--opt-a) center / cover no-repeat, linear-gradient(180deg, #a33f2f, #75221b); }
+    .option-btn:nth-child(4n+2) { background: var(--opt-b) center / cover no-repeat, linear-gradient(180deg, #35689c, #1f4270); }
+    .option-btn:nth-child(4n+3) { background: var(--opt-c) center / cover no-repeat, linear-gradient(180deg, #2f7f59, #1b5a3e); }
+    .option-btn:nth-child(4n+4) { background: var(--opt-d) center / cover no-repeat, linear-gradient(180deg, #b28a2f, #7e601e); }
+    .option-btn:hover { filter: brightness(1.08); }
+    .option-btn:active, .control-btn:active { transform: scale(0.98); }
+
+    .option-btn.correct {
+      background: #efe7d2;
+      border-color: #a96f3d;
+      color: #5a3a1f;
+    }
+
+    .option-btn.wrong {
+      background: #f7dfdf;
+      border-color: #bf6b6b;
+      color: #7a2e2e;
+    }
+
+    .feedback {
+      min-height: 40px;
+      margin-top: 12px;
+      padding: 8px 10px;
+      border-radius: 10px;
+      font-size: clamp(18px, 2.8vw, 24px);
+      font-weight: 800;
+    }
+
+    .feedback.good { background: #eafaf1; color: #176b3b; }
+    .feedback.bad { background: #fff3ec; color: #9f4f24; }
+
+    .hint {
+      min-height: 28px;
+      margin-top: 8px;
+      color: #2d5f9a;
+      font-weight: 700;
+      font-size: clamp(16px, 2.2vw, 20px);
+    }
+
+    .controls {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 10px;
+      margin-top: 14px;
+    }
+
+    .control-btn {
+      background: var(--primary);
+      color: white;
+      border: 2px solid transparent;
+    }
+
+    .control-btn:hover { background: var(--primary-dark); }
+    .control-btn.secondary { background: var(--accent); }
+    .control-btn.secondary:hover { background: #5d2121; }
+    .control-btn.warn { background: var(--warn); }
+    .control-btn.warn:hover { background: #9b6028; }
+    .control-btn:disabled {
+      opacity: 0.45;
+      cursor: not-allowed;
+    }
+
+    .teacher {
+      margin-top: 16px;
+      border: 2px dashed #b7d5f3;
+      border-radius: 12px;
+      padding: 12px;
+      background: rgba(244, 250, 255, 0.9);
+    }
+
+    .teacher-lock {
+      display: flex;
+      gap: 8px;
+      align-items: center;
+      flex-wrap: wrap;
+      margin-bottom: 8px;
+    }
+
+    .record-table {
+      width: 100%;
+      border-collapse: collapse;
+      margin-top: 8px;
+      font-size: 13px;
+    }
+    .record-table th, .record-table td {
+      border: 1px solid #d4c3ac;
+      padding: 6px;
+      text-align: left;
+    }
+
+    .teacher h2 {
+      margin: 0 0 8px;
+      font-size: clamp(18px, 2.5vw, 22px);
+      color: #1d66c2;
+    }
+
+    .teacher p {
+      margin: 4px 0;
+      color: var(--muted);
+      font-size: 14px;
+      line-height: 1.6;
+    }
+
+    .teacher .row {
+      margin: 8px 0;
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px 14px;
+      align-items: center;
+    }
+
+    .teacher label {
+      font-size: 14px;
+      color: #204c7b;
+      font-weight: 700;
+    }
+
+    .teacher input[type="text"], .teacher select, .start-panel select {
+      border: 2px solid #bdd7f3;
+      border-radius: 8px;
+      padding: 6px 8px;
+      font-size: 14px;
+    }
+
+    .teacher textarea {
+      width: 100%;
+      min-height: 120px;
+      border: 2px solid #bdd7f3;
+      border-radius: 8px;
+      padding: 8px;
+      font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+      font-size: 13px;
+      resize: vertical;
+    }
+
+    .small-btn {
+      border: none;
+      border-radius: 8px;
+      background: #8b5e34;
+      color: #fff;
+      font-weight: 700;
+      padding: 8px 12px;
+      cursor: pointer;
+    }
+
+    .start-panel {
+      border: 2px solid #cfe3f8;
+      border-radius: 12px;
+      padding: 12px;
+      margin-bottom: 12px;
+      background: #f7fbff;
+    }
+
+    .start-panel h3 {
+      margin: 0 0 8px;
+      color: #1d66c2;
+    }
+
+    .input-row {
+      display: flex;
+      gap: 8px;
+      flex-wrap: wrap;
+      align-items: center;
+      margin: 8px 0;
+    }
+
+    .input-row input[type="text"] {
+      flex: 1;
+      min-width: 220px;
+      border: 2px solid #c2daf4;
+      border-radius: 8px;
+      padding: 10px;
+      font-size: 16px;
+    }
+
+    .leaderboard {
+      margin: 6px 0 0;
+      padding-left: 22px;
+      color: #f5f0e2;
+      line-height: 1.7;
+      font-weight: 700;
+      font-size: 15px;
+      background: var(--leaderboard-stone) center / cover no-repeat, linear-gradient(180deg, #627060, #3f4a40);
+      border: 3px solid #a7a38a;
+      border-radius: 12px;
+      padding: 10px 16px 10px 30px;
+      box-shadow: inset 0 0 0 2px rgba(255,255,255,0.14);
+    }
+
+    .hidden { display: none; }
+
+    .battle-fx {
+      position: fixed;
+      inset: 0;
+      pointer-events: none;
+      display: none;
+      align-items: center;
+      justify-content: center;
+      font-size: clamp(36px, 7vw, 84px);
+      font-weight: 900;
+      z-index: 9999;
+      text-shadow: 0 3px 10px rgba(0,0,0,0.35);
+    }
+
+    .battle-fx.show { display: flex; }
+    .battle-fx.slash {
+      color: #fff3d9;
+      background: var(--fx-slash) center / 300px no-repeat, linear-gradient(125deg, transparent 40%, rgba(255,255,255,0.65) 48%, transparent 56%);
+      animation: slashAnim 0.45s ease-out;
+    }
+    .battle-fx.hit {
+      color: #ffd9d9;
+      background: var(--fx-hit) center / 280px no-repeat, radial-gradient(circle, rgba(160, 30, 30, 0.45) 0%, rgba(0,0,0,0.1) 55%, transparent 70%);
+      animation: hitAnim 0.45s ease-out;
+    }
+
+    @keyframes slashAnim {
+      0% { opacity: 0; transform: scale(1.3) rotate(-8deg); }
+      30% { opacity: 1; transform: scale(1) rotate(2deg); }
+      100% { opacity: 0; transform: scale(0.95) rotate(8deg); }
+    }
+
+    @keyframes hitAnim {
+      0% { opacity: 0; transform: scale(0.8); }
+      30% { opacity: 1; transform: scale(1.08); }
+      100% { opacity: 0; transform: scale(1); }
+    }
+
+    @media (max-width: 760px) {
+      .topbar { grid-template-columns: 1fr; }
+      .options { grid-template-columns: 1fr; }
+      .controls { grid-template-columns: 1fr; }
+      .app { padding: 14px; }
+    }
+  </style>
+</head>
+<body>
+  <main class="app">
+    <h1>小学华文词语游戏</h1>
+    <p class="subtitle">四年级适用｜一题一任务｜看懂就能答</p>
+
+    <section class="topbar">
+      <div class="stat" id="scoreBox">分数：0</div>
+      <div class="stat" id="streakBox">连对：0</div>
+      <div class="stat" id="levelBox">关卡：1</div>
+      <div class="stat" id="progressBox">题目：0 / 10</div>
+    </section>
+
+    <section class="start-panel" id="startPanel">
+      <h3>开始前请先输入名字</h3>
+      <div class="input-row">
+        <input id="playerNameInput" type="text" maxlength="16" placeholder="请输入名字（中文或英文）" />
+        <label><input type="checkbox" id="soundToggle" checked> 开启音效</label>
+      </div>
+      <div class="input-row">
+        <label>选择章节：
+          <select id="lessonSelect"></select>
+        </label>
+      </div>
+      <div class="input-row" id="typeSelector">
+        <label><input type="checkbox" class="game-type-toggle" value="pinyinToWord" checked> 拼音选词语</label>
+        <label><input type="checkbox" class="game-type-toggle" value="meaningToWord" checked> 意思选词语</label>
+        <label><input type="checkbox" class="game-type-toggle" value="sentenceBlank" checked> 句子填词语</label>
+        <label><input type="checkbox" class="game-type-toggle" value="collocation" checked> 词语搭配</label>
+        <button class="small-btn" id="selectAllTypesBtn" type="button">综合题型（全选）</button>
+      </div>
+      <p id="nameTip" class="subtitle" style="margin:0; text-align:left;">温馨提示：名字不能包含粗俗词语。</p>
+      <h3 id="heroTitle" style="margin-top:10px; color:#e9d7a6; text-shadow:0 2px 4px rgba(0,0,0,.4);">本课英豪录 Top 10</h3>
+      <ol id="leaderboardList" class="leaderboard"></ol>
+    </section>
+
+    <section class="card">
+      <div class="task-type" id="taskType">请先按“开始游戏”</div>
+      <p class="question" id="questionText">准备好了吗？</p>
+      <div class="hint" id="hintText">提示：点击题干可看拼音提示</div>
+      <div class="options" id="optionsWrap"></div>
+      <div class="feedback" id="feedback"></div>
+
+      <div class="controls">
+        <button class="control-btn" id="startBtn">开始游戏</button>
+        <button class="control-btn secondary" id="nextBtn" disabled>下一题</button>
+        <button class="control-btn warn" id="restartBtn">重新开始</button>
+      </div>
+    </section>
+
+    <section class="teacher">
+      <h2>老师模式（预留）</h2>
+      <div class="teacher-lock">
+        <input id="teacherPassInput" type="password" maxlength="20" placeholder="教师口令" />
+        <button class="small-btn" id="unlockTeacherBtn" type="button">进入教师后台</button>
+      </div>
+      <div id="teacherContent" class="hidden">
+      <p>可为不同章节设置词语库（JSON 数组格式）。</p>
+      <div class="row">
+        <label>编辑章节：
+          <select id="lessonEditorSelect"></select>
+        </label>
+        <input id="newLessonName" type="text" maxlength="12" placeholder="新增章节名，如：第四课" />
+        <button class="small-btn" id="addLessonBtn" type="button">新增章节</button>
+      </div>
+      <p>词语库 JSON（每项需有 word / pinyin / meaning / collocation / sentence）</p>
+      <textarea id="wordBankInput"></textarea>
+      <div class="row">
+        <button class="small-btn" id="applyWordBankBtn">应用词语库</button>
+      </div>
+      <p style="margin-top:8px;">学生尝试记录（仅教师可见）</p>
+      <table class="record-table">
+        <thead>
+          <tr><th>时间</th><th>学生</th><th>关卡</th><th>题型</th><th>作答</th><th>结果</th></tr>
+        </thead>
+        <tbody id="recordBody"></tbody>
+      </table>
+      <div class="row">
+        <button class="small-btn" id="clearRecordBtn" type="button">清空记录</button>
+      </div>
+      </div>
+    </section>
+  </main>
+  <div id="battleFx" class="battle-fx"></div>
+
+  <script>
+    /**
+     * 词语数据库（老师可在这里替换）
+     * word: 词语
+     * pinyin: 拼音（带声调）
+     * meaning: 简短意思（小学生能懂）
+     * collocation: 常见词语搭配
+     */
+    const LESSON_BANKS_SOURCE = {
+      "第一课": [
+        ["了解","liáo jiě","to understand / know"],["内外","nèi wài","inside and outside"],["预报","yù bào","forecast"],["情况","qíng kuàng","condition"],["观众","guān zhòng","audience"],["播放","bō fàng","broadcast"],["连续剧","lián xù jù","drama serial"],["共","gòng","in all"],["三十集","sān shí jí","30 episodes"],["篮球迷","lán qiú mí","basketball fan"],["精彩","jīng cǎi","exciting"],["换","huàn","switch"],["方言","fāng yán","dialect"],["飞快","fēi kuài","swift"],["投篮","tóu lán","shoot"],["手掌","shǒu zhǎng","palm"],["疲倦","pí juàn","tired"],["建议","jiàn yì","suggest"],["舞蹈","wǔ dǎo","dance"],["秘密","mì mì","secret"]
+      ],
+      "第二课": [
+        ["苹果","píng guǒ","apple"],["你一言，我一语","nǐ yì yán, wǒ yì yǔ","conversation"],["词语","cí yǔ","words"],["鱼丸","yú wán","fishball"],["鼓","gǔ","drum"],["帽子","mào zi","hat"],["外套","wài tào","jacket"],["递","dì","pass"],["姑姑","gū gū","aunt"],["烟花棒","yān huā bàng","sparkles"],["接","jiē","fetch"],["乌云密布","wū yún mì bù","overcast"],["紧接着","jǐn jiē zhe","shortly after"],["倾盆大雨","qīng pén dà yǔ","raining cats and dogs"],["呼呼地","hū hū de","whistling"],["暖暖的","nuǎn nuǎn de","warmly"],["赶紧","gǎn jǐn","quickly"],["表示","biǎo shì","express"],["忽然","hū rán","suddenly"],["灵机一动","líng jī yí dòng","bright idea"],["挤","jǐ","huddle"],["靠","kào","lean"],["紧紧的","jǐn jǐn de","tightly"],["撑","chēng","open umbrella"],["担心","dān xīn","worry"],["十分","shí fēn","very"]
+      ],
+      "第三课": [
+        ["尊敬","zūn jìng","respect"],["长辈","zhǎng bèi","elders"],["警察","jǐng chá","police"],["后悔","hòu huǐ","regret"],["发脾气","fā pí qì","throw tantrum"],["模型","mó xíng","model"],["一碗","yì wǎn","a bowl"],["最近","zuì jìn","recently"],["半夜","bàn yè","midnight"],["舍不得","shě bù dé","reluctant"],["放手","fàng shǒu","let go"],["醒","xǐng","awake"],["睁","zhēng","open eyes"],["补习","bǔ xí","tuition"],["受不了","shòu bù liǎo","unbearable"],["老婆婆","lǎo pó po","granny"],["吞","tūn","swallow"],["说了一个谎","shuō le yí gè huǎng","tell a lie"],["感动","gǎn dòng","touched"],["眼泪","yǎn lèi","tears"],["落","luò","shed"],["关心","guān xīn","care"],["整天","zhěng tiān","whole day"],["批评","pī píng","criticise"],["感谢","gǎn xiè","thank"]
+      ],
+      "第四课": [
+        ["值日","zhí rì","on duty"],["负责","fù zé","in-charge"],["擦","cā","wipe"],["风扇","fēng shàn","fan"],["归还","guī huán","return"],["插队","chā duì","jump queue"],["阅读","yuè dú","reading"],["玩耍","wán shuǎ","play"],["劝告","quàn gào","advice"],["注意","zhù yì","take note"],["保证","bǎo zhèng","assure"],["皱","zhòu","frown"],["眉头","méi tóu","brows"],["默默地","mò mò de","silently"],["由于","yóu yú","due to"],["不时","bù shí","from time to time"],["脚尖","jiǎo jiān","tip-toe"],["好不容易","hǎo bù róng yì","not easy"],["责任","zé rèn","responsibility"],["影响","yǐng xiǎng","affect"],["纷纷","fēn fēn","one after another"],["议论","yì lùn","discuss"],["投","tóu","cast"],["赞许","zàn xǔ","praise"],["目光","mù guāng","look"]
+      ],
+      "第五课": [
+        ["预防针","yù fáng zhēn","vaccination"],["体育","tǐ yù","physical education"],["继续","jì xù","continue"],["发烧","fā shāo","fever"],["药","yào","medicine"],["洗澡","xǐ zǎo","bathe"],["戴","dài","wear"],["日记","rì jì","diary"],["级任老师","jí rèn lǎo shī","form teacher"],["项目","xiàng mù","items"],["差","chà","worsen"],["闷闷不乐","mèn mèn bù lè","moody"],["轮到","lún dào","turn"],["针头","zhēn tóu","needle"],["胆小鬼","dǎn xiǎo guǐ","coward"],["微笑","wēi xiào","smile"],["松了一口气","sōng le yì kǒu qì","relax"],["勇敢","yǒng gǎn","brave"],["骗","piàn","lie"],["闭","bì","shut"],["哇","wā","wow"],["道理","dào lǐ","principle"],["并","bìng","actually"],["想象","xiǎng xiàng","imagine"],["可怕","kě pà","scary"]
+      ],
+      "第六课": [
+        ["功夫","gōng fū","martial arts"],["武术队","wǔ shù duì","Wushu"],["华族","huá zú","Chinese race"],["华乐团","huá yuè tuán","Chinese Orchestra"],["训练","xùn liàn","training"],["欢迎","huān yíng","welcome"],["握","wò","hold"],["鼓励","gǔ lì","encourage"],["机器人","jī qì rén","robotics"],["一封","yì fēng","a letter"],["亲爱","qīn ài","dear"],["好久不见","hǎo jiǔ bú jiàn","long time no see"],["丰富","fēng fù","abundant"],["啦","la","exclamation"],["等","děng","etc"],["乐器","yuè qì","instrument"],["小号","xiǎo hào","trumpet"],["辛苦","xīn kǔ","tough"],["断气","duàn qì","out of breath"],["放弃","fàng qì","give up"],["于是","yú shì","thus"],["坚持","jiān chí","persevere"],["一段","yí duàn","a period"],["教练","jiào liàn","coach"],["选中","xuǎn zhòng","chosen"],["机会","jī huì","opportunity"],["登","dēng","step on"],["幸运","xìng yùn","lucky"],["分享","fēn xiǎng","share"]
+      ],
+      "第七课": [
+        ["孕妇","yùn fù","pregnant lady"],["车厢","chē xiāng","cabin"],["乘客","chéng kè","commuters"],["随手","suí shǒu","conveniently"],["塑料袋","sù liào dài","plastic bag"],["节约","jié yuē","conserve"],["道歉","dào qiàn","apologise"],["舅舅","jiù jiu","uncle"],["人龙","rén lóng","long queue"],["移动","yí dòng","move"],["拼命","pīn mìng","desperately"],["终于","zhōng yú","finally"],["手舞足蹈","shǒu wǔ zú dǎo","dance for joy"],["胖乎乎","pàng hū hū","chubby"],["圆滚滚","yuán gǔn gǔn","round"],["秩序","zhì xù","order"],["耐心","nài xīn","patient"],["等待","děng dài","wait"],["悄悄地","qiāo qiāo de","quietly"]
+      ],
+      "第八课": [
+        ["危险","wēi xiǎn","dangerous"],["遵守","zūn shǒu","abide"],["交通","jiāo tōng","traffic"],["规则","guī zé","rules"],["车辆","chē liàng","vehicles"],["打电话","dǎ diàn huà","make a call"],["另","lìng","the other"],["伤者","shāng zhě","injured"],["指挥","zhǐ huī","direct"],["齐","qí","together"],["帮忙","bāng máng","help"],["巨大","jù dà","huge"],["困","kùn","trapped"],["手机","shǒu jī","phone"],["则","zé","while"],["尝试","cháng shì","try"],["部队","bù duì","unit"],["到达","dào dá","arrive"],["顺利","shùn lì","smoothly"],["皮外伤","pí wài shāng","abrasion"],["血","xiě","blood"],["进一步","jìn yí bù","further"],["记者","jì zhě","reporter"],["进行","jìn xíng","conduct"],["采访","cǎi fǎng","interview"],["一行","yì háng","a line"],["标题","biāo tí","headline"],["上了报","shàng le bào","published"],["见义勇为","jiàn yì yǒng wéi","act bravely"],["获得","huò dé","receive"],["公众","gōng zhòng","public"],["表扬","biǎo yáng","praise"]
+      ],
+      "第九课": [
+        ["盲道","máng dào","tactile paving"],["熟食中心","shú shí zhōng xīn","hawker centre"],["居民","jū mín","residents"],["提供","tí gòng","provide"],["水沟","shuǐ gōu","drain"],["清洁","qīng jié","clean"],["饮料","yǐn liào","beverage"],["摊位","tān wèi","stall"],["糖果","táng guǒ","sweets"],["快餐店","kuài cān diàn","fast food"],["提议","tí yì","suggest"],["一向","yí xiàng","all along"],["讨厌","tǎo yàn","dislike"],["口味","kǒu wèi","taste"],["神秘","shén mì","secretive"],["一般","yì bān","common"],["服务员","fú wù yuán","service crew"],["其中","qí zhōng","among"],["辣","là","spicy"],["橙汁","chéng zhī","orange juice"],["笔画","bǐ huà","strokes"],["告示牌","gào shì pái","placard"],["以为","yǐ wéi","think"],["清楚","qīng chǔ","clearly"],["重复","chóng fù","repeat"],["依然","yī rán","still"],["失聪人士","shī cōng rén shì","deaf person"],["菜单","cài dān","menu"],["点餐","diǎn cān","order"],["笨","bèn","foolish"],["而是","ér shì","but rather"],["支持","zhī chí","support"],["发","fā","send"],["一则","yì zé","a message"]
+      ]
+    };
+
+    function normalizeLessonBanks(source) {
+      const result = {};
+      Object.keys(source).forEach(lesson => {
+        result[lesson] = source[lesson].map(([word, pinyin, meaning]) => ({
+          word,
+          pinyin,
+          meaning: `英文：${meaning}`,
+          collocation: `${word}（常见搭配）`,
+          sentence: `请在句子空格填写正确词语：____（提示词义：${meaning}）`
+        }));
+      });
+      return result;
+    }
+    const LESSON_BANKS_DEFAULT = normalizeLessonBanks(LESSON_BANKS_SOURCE);
+
+    // 基本设置
+    const TOTAL_QUESTIONS = 10;
+    const ALL_TYPES = ["pinyinToWord", "meaningToWord", "sentenceBlank", "collocation"];
+    let activeTypes = [...ALL_TYPES];
+    let lessonBanks = JSON.parse(JSON.stringify(LESSON_BANKS_DEFAULT));
+    let currentLesson = "第一课";
+    let WORD_BANK = [...lessonBanks[currentLesson]];
+
+    // 游戏状态
+    let score = 0;
+    let streak = 0;
+    let bestStreak = 0;
+    let correctCount = 0;
+    let currentIndex = 0;
+    let usedQuestions = [];
+    let currentQuestion = null;
+    let hasAnswered = false;
+    let playerName = "";
+    let soundEnabled = true;
+    let audioCtx = null;
+    let level = 1;
+    let playerHP = 40;
+    let enemyHP = 30;
+    let gameOver = false;
+
+    // 画面元素
+    const scoreBox = document.getElementById("scoreBox");
+    const streakBox = document.getElementById("streakBox");
+    const levelBox = document.getElementById("levelBox");
+    const progressBox = document.getElementById("progressBox");
+    const taskType = document.getElementById("taskType");
+    const questionText = document.getElementById("questionText");
+    const hintText = document.getElementById("hintText");
+    const optionsWrap = document.getElementById("optionsWrap");
+    const feedback = document.getElementById("feedback");
+    const startBtn = document.getElementById("startBtn");
+    const nextBtn = document.getElementById("nextBtn");
+    const restartBtn = document.getElementById("restartBtn");
+    const gameTypeToggles = [...document.querySelectorAll(".game-type-toggle")];
+    const selectAllTypesBtn = document.getElementById("selectAllTypesBtn");
+    const wordBankInput = document.getElementById("wordBankInput");
+    const applyWordBankBtn = document.getElementById("applyWordBankBtn");
+    const lessonSelect = document.getElementById("lessonSelect");
+    const lessonEditorSelect = document.getElementById("lessonEditorSelect");
+    const newLessonName = document.getElementById("newLessonName");
+    const addLessonBtn = document.getElementById("addLessonBtn");
+    const playerNameInput = document.getElementById("playerNameInput");
+    const soundToggle = document.getElementById("soundToggle");
+    const leaderboardList = document.getElementById("leaderboardList");
+    const heroTitle = document.getElementById("heroTitle");
+    const nameTip = document.getElementById("nameTip");
+    const startPanel = document.getElementById("startPanel");
+    const battleFx = document.getElementById("battleFx");
+    const teacherPassInput = document.getElementById("teacherPassInput");
+    const unlockTeacherBtn = document.getElementById("unlockTeacherBtn");
+    const teacherContent = document.getElementById("teacherContent");
+    const recordBody = document.getElementById("recordBody");
+    const clearRecordBtn = document.getElementById("clearRecordBtn");
+
+    refreshLessonSelects();
+    loadLessonToEditor(currentLesson);
+    renderLeaderboard(currentLesson);
+
+    function getAudioCtx() {
+      if (!audioCtx) {
+        const Ctx = window.AudioContext || window.webkitAudioContext;
+        if (!Ctx) return null;
+        audioCtx = new Ctx();
+      }
+      return audioCtx;
+    }
+
+    // 音效（WebAudio，无需外部文件）
+    function playSound(kind) {
+      if (!soundEnabled) return;
+      const ctx = getAudioCtx();
+      if (!ctx) return;
+      const osc = ctx.createOscillator();
+      const gain = ctx.createGain();
+      osc.connect(gain);
+      gain.connect(ctx.destination);
+
+      if (kind === "correct") {
+        const osc2 = ctx.createOscillator();
+        const gain2 = ctx.createGain();
+        osc2.connect(gain2); gain2.connect(ctx.destination);
+        osc.frequency.value = 680;
+        gain.gain.value = 0.05;
+        osc.start();
+        osc.frequency.exponentialRampToValueAtTime(900, ctx.currentTime + 0.13);
+        osc.stop(ctx.currentTime + 0.14);
+        osc2.frequency.value = 980;
+        gain2.gain.value = 0.03;
+        osc2.start(ctx.currentTime + 0.09);
+        osc2.stop(ctx.currentTime + 0.18);
+      } else {
+        const osc2 = ctx.createOscillator();
+        const gain2 = ctx.createGain();
+        osc2.connect(gain2); gain2.connect(ctx.destination);
+        osc.type = "sawtooth";
+        osc.frequency.value = 220;
+        gain.gain.value = 0.04;
+        osc.start();
+        osc.frequency.exponentialRampToValueAtTime(120, ctx.currentTime + 0.2);
+        osc.stop(ctx.currentTime + 0.21);
+        osc2.type = "triangle";
+        osc2.frequency.value = 90;
+        gain2.gain.value = 0.025;
+        osc2.start(ctx.currentTime + 0.04);
+        osc2.stop(ctx.currentTime + 0.22);
+      }
+    }
+
+    function playBattleFx(kind) {
+      battleFx.className = `battle-fx show ${kind}`;
+      battleFx.textContent = kind === "slash" ? "击" : "破";
+      setTimeout(() => {
+        battleFx.className = "battle-fx";
+        battleFx.textContent = "";
+      }, 420);
+    }
+
+    // 小工具：随机取 n 个不重复项
+    function pickRandom(array, n) {
+      const copy = [...array];
+      for (let i = copy.length - 1; i > 0; i--) {
+        const j = Math.floor(Math.random() * (i + 1));
+        [copy[i], copy[j]] = [copy[j], copy[i]];
+      }
+      return copy.slice(0, n);
+    }
+
+    // 小工具：打乱数组
+    function shuffle(array) {
+      const newArr = [...array];
+      for (let i = newArr.length - 1; i > 0; i--) {
+        const j = Math.floor(Math.random() * (i + 1));
+        [newArr[i], newArr[j]] = [newArr[j], newArr[i]];
+      }
+      return newArr;
+    }
+
+    // 更新顶部显示
+    function updateStats() {
+      scoreBox.textContent = `分数：${score}`;
+      streakBox.textContent = `连对：${streak}`;
+      levelBox.textContent = `关卡：${level}｜我方${playerHP} 血｜敌方${enemyHP} 血`;
+      progressBox.textContent = `题目：${Math.min(currentIndex, TOTAL_QUESTIONS)} / ${TOTAL_QUESTIONS}`;
+    }
+
+    function saveAttemptLog(row) {
+      const key = "vocabAttemptLogs";
+      const rows = JSON.parse(localStorage.getItem(key) || "[]");
+      rows.push(row);
+      localStorage.setItem(key, JSON.stringify(rows.slice(-300)));
+    }
+
+    function renderAttemptLogs() {
+      const rows = JSON.parse(localStorage.getItem("vocabAttemptLogs") || "[]");
+      recordBody.innerHTML = "";
+      rows.slice().reverse().slice(0, 80).forEach(r => {
+        const tr = document.createElement("tr");
+        tr.innerHTML = `<td>${r.time}</td><td>${r.player}</td><td>${r.level}</td><td>${r.type}</td><td>${r.selected}</td><td>${r.ok ? "✅答对" : "❌答错"}</td>`;
+        recordBody.appendChild(tr);
+      });
+    }
+
+    function getBadWords() {
+      return ["傻", "笨蛋", "白痴", "蠢", "fuck", "shit", "bitch", "idiot", "垃圾"];
+    }
+
+    function refreshLessonSelects() {
+      const lessons = Object.keys(lessonBanks);
+      lessonSelect.innerHTML = "";
+      lessonEditorSelect.innerHTML = "";
+      lessons.forEach(lesson => {
+        const opt1 = document.createElement("option");
+        opt1.value = lesson;
+        opt1.textContent = lesson;
+        lessonSelect.appendChild(opt1);
+        const opt2 = document.createElement("option");
+        opt2.value = lesson;
+        opt2.textContent = lesson;
+        lessonEditorSelect.appendChild(opt2);
+      });
+      lessonSelect.value = currentLesson;
+      lessonEditorSelect.value = currentLesson;
+    }
+
+    function loadLessonToEditor(lessonName) {
+      currentLesson = lessonName;
+      WORD_BANK = [...lessonBanks[currentLesson]];
+      wordBankInput.value = JSON.stringify(lessonBanks[currentLesson], null, 2);
+      lessonSelect.value = currentLesson;
+      lessonEditorSelect.value = currentLesson;
+      renderLeaderboard(currentLesson);
+    }
+
+    function promptPinyinHint(prompt) {
+      let text = prompt;
+      const map = {
+        "拼音": "pīn yīn",
+        "意思": "yì si",
+        "请选择能组成常用词组的一项": "qǐng xuǎn zé néng zǔ chéng cháng yòng cí zǔ de yí xiàng",
+        "请在句子空格填写正确词语": "qǐng zài jù zi kòng gé tián xiě zhèng què cí yǔ",
+        "提示词义": "tí shì cí yì"
+      };
+      WORD_BANK.forEach(item => {
+        if (text.includes(item.word)) text = text.replaceAll(item.word, `${item.word}(${item.pinyin})`);
+      });
+      Object.keys(map).forEach(k => {
+        if (text.includes(k)) text = text.replaceAll(k, `${k}(${map[k]})`);
+      });
+      return text;
+    }
+
+    function isValidName(name) {
+      if (!name) return false;
+      const n = name.trim().toLowerCase();
+      if (n.length < 2) return false;
+      return !getBadWords().some(w => n.includes(w));
+    }
+
+    function leaderboardKey(lessonName) {
+      return `vocabLeaderboard:${lessonName}`;
+    }
+
+    function getLeaderboard(lessonName) {
+      try {
+        return JSON.parse(localStorage.getItem(leaderboardKey(lessonName)) || "[]");
+      } catch {
+        return [];
+      }
+    }
+
+    function saveLeaderboard(lessonName, entries) {
+      localStorage.setItem(leaderboardKey(lessonName), JSON.stringify(entries.slice(0, 10)));
+    }
+
+    function addLeaderboard(lessonName, name, finalScore) {
+      const entries = getLeaderboard(lessonName);
+      entries.push({ name, score: finalScore, at: Date.now() });
+      entries.sort((a, b) => b.score - a.score || a.at - b.at);
+      saveLeaderboard(lessonName, entries);
+      renderLeaderboard(lessonName);
+    }
+
+    function renderLeaderboard(lessonName) {
+      const entries = getLeaderboard(lessonName);
+      heroTitle.textContent = `${lessonName} 英豪录 Top 10`;
+      const labels = ["状元", "榜眼", "探花"];
+      leaderboardList.innerHTML = "";
+      if (!entries.length) {
+        leaderboardList.innerHTML = "<li>暂无记录，等你来挑战！</li>";
+        return;
+      }
+      entries.slice(0, 10).forEach((e, i) => {
+        const li = document.createElement("li");
+        const rank = i < 3 ? labels[i] : `第${i + 1}名`;
+        li.textContent = `${rank}：${e.name}｜${e.score}分`;
+        leaderboardList.appendChild(li);
+      });
+    }
+
+    // 生成一个题目（4种题型，可切换）
+    function buildQuestion() {
+      const type = activeTypes[Math.floor(Math.random() * activeTypes.length)];
+      const answerItem = WORD_BANK[Math.floor(Math.random() * WORD_BANK.length)];
+      const wrongItems = pickRandom(WORD_BANK.filter(x => x.word !== answerItem.word), 3);
+
+      if (type === "pinyinToWord") {
+        const lengthMatched = WORD_BANK.filter(x => x.word.length === answerItem.word.length && x.word !== answerItem.word);
+        const hardWrongWords = pickRandom(lengthMatched.length >= 3 ? lengthMatched : WORD_BANK.filter(x => x.word !== answerItem.word), 3);
+        const prompt = `拼音：${answerItem.pinyin}`;
+        return {
+          typeLabel: "题型：通过拼音选词语",
+          prompt,
+          answer: answerItem.word,
+          hint: `题干拼音：${promptPinyinHint(prompt)}`,
+          options: shuffle([answerItem.word, ...hardWrongWords.map(x => x.word)])
+        };
+      }
+
+      if (type === "sentenceBlank") {
+        const prompt = answerItem.sentence || `请选择能放进句子里的词语：____`;
+        return {
+          typeLabel: "题型：句子中选择正确词语",
+          prompt,
+          answer: answerItem.word,
+          hint: `题干拼音：${promptPinyinHint(prompt)}`,
+          options: shuffle([answerItem.word, ...wrongItems.map(x => x.word)])
+        };
+      }
+
+      if (type === "collocation") {
+        const prompt = `请选择能组成常用词组的一项：${answerItem.collocation.replace(answerItem.word, "____")}`;
+        return {
+          typeLabel: "题型：词语搭配（常见搭配）",
+          prompt,
+          answer: answerItem.word,
+          hint: `题干拼音：${promptPinyinHint(prompt)}`,
+          options: shuffle([answerItem.word, ...wrongItems.map(x => x.word)])
+        };
+      }
+
+      const prompt = `意思：${answerItem.meaning}`;
+      return {
+        typeLabel: "题型：通过意思选词语",
+        prompt,
+        answer: answerItem.word,
+        hint: `题干拼音：${promptPinyinHint(prompt)}`,
+        options: shuffle([answerItem.word, ...wrongItems.map(x => x.word)])
+      };
+    }
+
+    // 渲染当前题目
+    function renderQuestion() {
+      hasAnswered = false;
+      feedback.className = "feedback";
+      feedback.textContent = "";
+      hintText.textContent = "提示：点击题干可看拼音提示";
+      nextBtn.disabled = true;
+
+      currentQuestion = buildQuestion();
+      taskType.textContent = currentQuestion.typeLabel;
+      questionText.textContent = currentQuestion.prompt;
+
+      optionsWrap.innerHTML = "";
+      currentQuestion.options.forEach(option => {
+        const btn = document.createElement("button");
+        btn.className = "option-btn";
+        btn.textContent = option;
+        btn.addEventListener("click", () => checkAnswer(btn, option));
+        optionsWrap.appendChild(btn);
+      });
+
+      updateStats();
+    }
+
+    // 检查答案并立刻反馈
+    function checkAnswer(btn, selected) {
+      if (hasAnswered || gameOver) return;
+      hasAnswered = true;
+
+      const allButtons = [...document.querySelectorAll(".option-btn")];
+      allButtons.forEach(b => (b.disabled = true));
+
+      if (selected === currentQuestion.answer) {
+        playSound("correct");
+        playBattleFx("slash");
+        btn.classList.add("correct");
+        streak += 1;
+        bestStreak = Math.max(bestStreak, streak);
+        correctCount += 1;
+        let gain = 7;
+
+        // 连续答对奖励（连胜权重）
+        if (streak >= 2) {
+          gain += 1;
+        }
+
+        // 连对5题额外奖励
+        if (streak > 0 && streak % 5 === 0) {
+          gain += 2;
+        }
+
+        score += gain;
+        enemyHP = Math.max(0, enemyHP - 15);
+        feedback.className = "feedback good";
+        feedback.textContent = streak >= 2 ? `太棒了！你答对了！本题 +${gain} 分` : `你答对了！本题 +${gain} 分`;
+        if (enemyHP === 0) {
+          level += 1;
+          enemyHP = 30 + Math.min(20, level * 2);
+          playerHP = Math.min(60, playerHP + 6);
+          feedback.textContent += "｜你击败了敌人，进入下一关！";
+        }
+      } else {
+        playSound("wrong");
+        playBattleFx("hit");
+        btn.classList.add("wrong");
+        streak = 0;
+        playerHP = Math.max(0, playerHP - 12);
+
+        // 标记正确答案
+        allButtons.forEach(b => {
+          if (b.textContent === currentQuestion.answer) {
+            b.classList.add("correct");
+          }
+        });
+
+        feedback.className = "feedback bad";
+        feedback.textContent = "再想一想！继续加油！";
+        if (playerHP === 0) {
+          gameOver = true;
+          feedback.textContent = "你被敌人击中了！本局结束，点击“重新开始”再挑战。";
+          nextBtn.disabled = true;
+          showFinal(true);
+        }
+      }
+
+      saveAttemptLog({
+        time: new Date().toLocaleString("zh-CN", { hour12: false }),
+        player: playerName || "未命名",
+        level,
+        type: currentQuestion.typeLabel,
+        selected,
+        ok: selected === currentQuestion.answer
+      });
+
+      if (!gameOver) nextBtn.disabled = false;
+      updateStats();
+    }
+
+    // 显示最后结果
+    function showFinal(defeated = false) {
+      
+      const accuracyPart = Math.round((correctCount / TOTAL_QUESTIONS) * 70);
+      const streakPart = Math.min(30, bestStreak * 3);
+      const finalScore = accuracyPart + streakPart;
+      score = finalScore;
+      addLeaderboard(currentLesson, playerName, finalScore);
+      taskType.textContent = defeated ? "闯关失败" : "游戏完成";
+      questionText.textContent = defeated ? `你的总分是 ${finalScore} 分，下次一定能闯更高关！` : `你最后得到 ${finalScore} 分！`;
+      optionsWrap.innerHTML = "";
+      feedback.className = "feedback good";
+
+      let message = "继续加油！";
+      if (finalScore >= 90) message = "太棒了！你今天表现非常好！";
+      else if (finalScore >= 75) message = "你答得很不错！继续努力！";
+      else if (finalScore >= 60) message = "你做到了！再多练习会更好！";
+
+      feedback.textContent = `${message}（对错70%:${accuracyPart}，连胜30%:${streakPart}）`;
+      nextBtn.disabled = true;
+      hintText.textContent = "点击“重新开始”可再玩一次。";
+      renderLeaderboard(currentLesson);
+      updateStats();
+    }
+
+    // 开始游戏
+    function startGame() {
+      const name = playerNameInput.value.trim();
+      if (!isValidName(name)) {
+        nameTip.textContent = "名字无效：至少2个字，并且不能有粗俗词语。";
+        nameTip.style.color = "#c0392b";
+        return;
+      }
+      const selectedTypes = gameTypeToggles.filter(x => x.checked).map(x => x.value);
+      if (selectedTypes.length === 0) {
+        nameTip.textContent = "请至少选择一种题型，或按“综合题型（全选）”。";
+        nameTip.style.color = "#c0392b";
+        return;
+      }
+      activeTypes = selectedTypes;
+      loadLessonToEditor(lessonSelect.value);
+      playerName = name;
+      soundEnabled = soundToggle.checked;
+      nameTip.textContent = `欢迎你，${playerName}！加油！`;
+      nameTip.style.color = "#2d6a9f";
+      score = 0;
+      streak = 0;
+      bestStreak = 0;
+      correctCount = 0;
+      level = 1;
+      playerHP = 40;
+      enemyHP = 30;
+      gameOver = false;
+      currentIndex = 0;
+      usedQuestions = [];
+      startBtn.disabled = true;
+      nextBtn.disabled = true;
+      startPanel.classList.add("hidden");
+
+      nextQuestion();
+    }
+
+    // 下一题
+    function nextQuestion() {
+      if (gameOver) return;
+      if (currentIndex >= TOTAL_QUESTIONS) {
+        showFinal();
+        return;
+      }
+
+      currentIndex += 1;
+      renderQuestion();
+    }
+
+    // 重新开始
+    function restartGame() {
+      startBtn.disabled = false;
+      nextBtn.disabled = true;
+      score = 0;
+      streak = 0;
+      bestStreak = 0;
+      correctCount = 0;
+      level = 1;
+      playerHP = 40;
+      enemyHP = 30;
+      gameOver = false;
+      currentIndex = 0;
+      usedQuestions = [];
+      currentQuestion = null;
+      hasAnswered = false;
+
+      taskType.textContent = "请先按“开始游戏”";
+      questionText.textContent = "准备好了吗？";
+      optionsWrap.innerHTML = "";
+      feedback.className = "feedback";
+      feedback.textContent = "";
+      hintText.textContent = "提示：点击题干可看拼音提示";
+      startPanel.classList.remove("hidden");
+      updateStats();
+    }
+
+    // 点击题干显示拼音提示
+    questionText.addEventListener("click", () => {
+      if (!currentQuestion) return;
+      hintText.textContent = currentQuestion.hint || "这题没有额外提示。";
+    });
+
+    selectAllTypesBtn.addEventListener("click", () => {
+      gameTypeToggles.forEach(x => { x.checked = true; });
+      nameTip.textContent = "已选择综合题型（全选）。";
+      nameTip.style.color = "#2d6a9f";
+    });
+
+    lessonSelect.addEventListener("change", () => {
+      loadLessonToEditor(lessonSelect.value);
+    });
+
+    lessonEditorSelect.addEventListener("change", () => {
+      loadLessonToEditor(lessonEditorSelect.value);
+    });
+
+    unlockTeacherBtn.addEventListener("click", () => {
+      if (teacherPassInput.value !== "laoshi123") {
+        alert("教师口令错误。");
+        return;
+      }
+      teacherContent.classList.remove("hidden");
+      renderAttemptLogs();
+    });
+
+    clearRecordBtn.addEventListener("click", () => {
+      if (!confirm("确定清空所有学生尝试记录吗？")) return;
+      localStorage.removeItem("vocabAttemptLogs");
+      renderAttemptLogs();
+    });
+
+    addLessonBtn.addEventListener("click", () => {
+      const name = newLessonName.value.trim();
+      if (!name) {
+        alert("请输入章节名。");
+        return;
+      }
+      if (lessonBanks[name]) {
+        alert("该章节已存在。");
+        return;
+      }
+      lessonBanks[name] = [
+        { word: "示例词", pinyin: "shì lì cí", meaning: "请老师替换这个词语", collocation: "示例词搭配", sentence: "这是一个____句子。" },
+        { word: "练习词", pinyin: "liàn xí cí", meaning: "方便先测试能否出题", collocation: "练习词搭配", sentence: "请把____填进句子里。" },
+        { word: "词语A", pinyin: "cí yǔ A", meaning: "示例解释", collocation: "词语A搭配", sentence: "老师可以替换____。" },
+        { word: "词语B", pinyin: "cí yǔ B", meaning: "示例解释", collocation: "词语B搭配", sentence: "学生选择正确____。" }
+      ];
+      currentLesson = name;
+      refreshLessonSelects();
+      loadLessonToEditor(name);
+      newLessonName.value = "";
+      alert("新章节已添加，请编辑词语库后点击“应用词语库”。");
+    });
+
+    // 老师模式：应用词语库 JSON
+    applyWordBankBtn.addEventListener("click", () => {
+      try {
+        const parsed = JSON.parse(wordBankInput.value);
+        const ok = Array.isArray(parsed) && parsed.every(item =>
+          item.word && item.pinyin && item.meaning && item.collocation && item.sentence
+        );
+        if (!ok || parsed.length < 4) {
+          alert("词语库格式不对，或词语太少（至少 4 个，且每项要有 sentence）。");
+          return;
+        }
+        lessonBanks[currentLesson] = parsed;
+        WORD_BANK = [...lessonBanks[currentLesson]];
+        restartGame();
+        alert(`${currentLesson} 词语库已更新。`);
+      } catch (e) {
+        alert("JSON 格式错误，请检查标点。");
+      }
+    });
+
+    startBtn.addEventListener("click", startGame);
+    nextBtn.addEventListener("click", nextQuestion);
+    restartBtn.addEventListener("click", restartGame);
+
+    updateStats();
+  </script>
+</body>
+</html>
